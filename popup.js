@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const openWindowBtn = document.getElementById('open-window-btn');
   const progressFill = document.querySelector('.timer-progress-fill');
   
+  // 设置窗口标题
+  document.title = "Sense Of Time";
+  
   // 默认定时器状态
   let timerState = {
     timeLeft: 1 * 60, // 默认1分钟（秒）

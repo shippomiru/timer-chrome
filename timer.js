@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 获取圆形进度条的总长度
   const circleCircumference = parseFloat(progressFill.getAttribute('stroke-dasharray'));
   
+  // 设置窗口标题
+  document.title = "Sense Of Time";
+  
   let timerState = {
     timeLeft: 1 * 60,
     isRunning: false,
@@ -74,9 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       }
     }
-    
-    // 更新窗口标题，显示剩余时间
-    document.title = `${formatTime(timerState.timeLeft)} - Sense Of Time`;
   }
   
   // 格式化时间显示
