@@ -112,8 +112,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   else if (message.action === 'openTimerWindow') {
     // 处理打开独立计时器窗口的请求
     console.log('收到打开计时器窗口请求');
-    openTimerWindow();
-    sendResponse({ success: true });
+    openTimerWindow().then(() => {
+      sendResponse({ success: true });
+    });
+    return true; // 异步响应，保持通道开放
   }
   else if (message.action === 'popupOpened') {
     // 记录popup已打开
@@ -291,32 +293,42 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 // 添加打开计时器窗口的功能
 function openTimerWindow() {
-  // 检查是否已经存在计时器窗口
-  chrome.windows.getAll({populate: true}, function(windows) {
-    let timerWindowExists = false;
-    
-    for (let browserWindow of windows) {
-      for (let tab of browserWindow.tabs) {
-        if (tab.url && tab.url.includes('timer.html')) {
-          // 如果找到了计时器窗口，激活它
-          chrome.windows.update(browserWindow.id, {focused: true});
-          chrome.tabs.update(tab.id, {active: true});
-          timerWindowExists = true;
-          break;
+  return new Promise((resolve) => {
+    // 检查是否已经存在计时器窗口
+    chrome.windows.getAll({populate: true}, function(windows) {
+      let timerWindowExists = false;
+      
+      for (let browserWindow of windows) {
+        for (let tab of browserWindow.tabs) {
+          if (tab.url && tab.url.includes('timer.html')) {
+            // 如果找到了计时器窗口，激活它
+            chrome.windows.update(browserWindow.id, {focused: true});
+            chrome.tabs.update(tab.id, {active: true});
+            timerWindowExists = true;
+            console.log('找到已存在的计时器窗口，激活它');
+            break;
+          }
         }
+        if (timerWindowExists) break;
       }
-      if (timerWindowExists) break;
-    }
-    
-    // 如果没有找到计时器窗口，创建一个新的
-    if (!timerWindowExists) {
-      chrome.windows.create({
-        url: chrome.runtime.getURL('timer.html'),
-        type: 'popup',
-        width: 400,
-        height: 500
-      });
-    }
+      
+      // 如果没有找到计时器窗口，创建一个新的
+      if (!timerWindowExists) {
+        console.log('创建新的计时器窗口');
+        chrome.windows.create({
+          url: chrome.runtime.getURL('timer.html'),
+          type: 'popup',
+          width: 400,
+          height: 500
+        }, () => {
+          console.log('新计时器窗口已创建');
+          resolve(true);
+        });
+      } else {
+        // 如果窗口已存在，也返回成功
+        resolve(true);
+      }
+    });
   });
 }
 

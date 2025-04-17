@@ -55,12 +55,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 chrome.runtime.sendMessage({
                   action: 'openTimerWindow'
                 }, function(windowResponse) {
-                  if (windowResponse && windowResponse.success) {
-                    console.log('Timer window opened');
-                    
-                    // 关闭当前选项页面
+                  console.log('Timer window request completed');
+                  
+                  // 无论是否成功创建新窗口，都关闭当前选项页面
+                  // 延迟100毫秒确保所有消息处理完毕
+                  setTimeout(() => {
+                    console.log('Closing options panel');
                     window.close();
-                  }
+                  }, 100);
                 });
               }
             });
