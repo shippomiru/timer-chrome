@@ -1,0 +1,6 @@
+/* timer.css - 禁用先前的样式，仅保留拖动样式 */
+
+.sense-of-time-timer.dragging {
+  opacity: 0.8;
+  cursor: grabbing;
+}
