@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     totalTime: 1 * 60
   };
   
+  // 通知后台timer窗口已打开
+  chrome.runtime.sendMessage({action: 'popupOpened'}, function(response) {
+    console.log('已通知后台timer窗口已打开', response);
+  });
+  
   // 从后台获取计时器状态
   chrome.runtime.sendMessage({ action: 'getTimerState' }, (response) => {
     if (response) {
@@ -123,6 +128,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (message.action === 'timerCompleted') {
       // 在独立窗口中播放通知效果
       document.body.style.animation = 'flash 0.5s 3';
+    } else if (message.action === 'ping') {
+      // 响应来自background的ping，表明timer窗口仍然打开
+      sendResponse({ alive: true });
+      return true;
     }
     
     sendResponse({ received: true });
@@ -132,7 +141,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // 添加窗口关闭前的事件监听
   window.addEventListener('beforeunload', () => {
     console.log('计时器窗口即将关闭');
-    // 不需要特殊处理，因为background.js会通过windows.onRemoved事件处理窗口关闭
+    
+    // 尝试直接通知，但可能不会成功
+    try {
+      chrome.runtime.sendMessage({action: 'popupClosed'});
+    } catch (e) {
+      console.error('发送Timer窗口关闭消息失败:', e);
+    }
   });
   
   // 添加一个闪烁的动画效果

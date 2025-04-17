@@ -15,6 +15,22 @@ document.addEventListener('DOMContentLoaded', function() {
     isRunning: false
   };
   
+  // 通知后台popup已打开
+  chrome.runtime.sendMessage({action: 'popupOpened'}, function(response) {
+    console.log('已通知后台popup已打开', response);
+  });
+  
+  // 添加window卸载事件，通知后台popup关闭
+  window.addEventListener('unload', function() {
+    console.log('Popup窗口即将关闭');
+    // 尝试直接通知，但可能不会成功
+    try {
+      chrome.runtime.sendMessage({action: 'popupClosed'});
+    } catch (e) {
+      console.error('发送popup关闭消息失败:', e);
+    }
+  });
+  
   // 格式化时间显示
   function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
@@ -94,6 +110,10 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('收到定时器更新:', request.timerState);
         timerState = request.timerState;
         updateTimerUI();
+      } else if (request.action === 'ping') {
+        // 响应来自background的ping，表明popup仍然打开
+        sendResponse({ alive: true });
+        return true;
       }
       return true;
     });
