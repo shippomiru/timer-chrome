@@ -8,10 +8,14 @@
     body {
       font-family: ui-rounded, "Hiragino Maru Gothic ProN", Quicksand, Comfortaa, Manjari, "Arial Rounded MT", "Arial Rounded MT Bold", Calibri, source-sans-pro, sans-serif;
       margin: 0;
-      padding: 0;
+      padding: 20px;
       background-color: white;
-      width: 320px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
       color: #1f2937;
+      overflow: hidden;
     }
     
     .timer-card {
@@ -22,7 +26,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
       width: 100%;
+      max-width: 320px;
     }
     
     .timer-circle-container {
@@ -76,12 +82,6 @@
       margin-bottom: 24px;
     }
     
-    .timer-controls {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-    }
-    
     .timer-button {
       width: 86px;
       height: 43px;
@@ -100,28 +100,9 @@
     .timer-button:hover {
       background-color: #374151;
     }
-
-    .open-window-button {
-      width: 86px;
-      height: 43px;
-      border-radius: 9999px;
-      background-color: #818CF8;
-      color: white;
-      font-family: inherit;
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
-    }
-    
-    .open-window-button:hover {
-      background-color: #6366F1;
-    }
   </style>
 </head>
-<body>
+<body>  
   <div class="timer-card">
     <div class="timer-circle-container">
       <svg class="timer-progress">
@@ -150,18 +131,12 @@
     <div class="timer-time-container">
       <div class="timer-time" id="time-display">05:00</div>
       
-      <div class="timer-controls">
-        <button id="toggle-btn" class="timer-button">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        </button>
-        
-        <button id="open-window-btn" class="open-window-button">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-        </button>
-      </div>
+      <button id="toggle-btn" class="timer-button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+      </button>
     </div>
   </div>
 
-  <script src="popup.js"></script>
+  <script src="timer.js"></script>
 </body>
 </html> 

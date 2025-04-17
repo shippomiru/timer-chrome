@@ -79,7 +79,7 @@ function resetTimer() {
   broadcastTimerState();
 }
 
-// 监听来自content script的消息
+// 监听来自popup和独立窗口的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('收到消息:', message);
   
@@ -109,6 +109,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     saveTimerState();
     sendResponse(timerState);
   }
+  else if (message.action === 'openTimerWindow') {
+    // 处理打开独立计时器窗口的请求
+    console.log('收到打开计时器窗口请求');
+    openTimerWindow();
+    sendResponse({ success: true });
+  }
   
   return true; // 保持通道开放，以便异步响应
 });
@@ -133,55 +139,72 @@ setInterval(() => {
   }
 }, 1000);
 
-// 广播计时器状态到所有内容脚本
+// 向所有相关页面广播计时器状态
 function broadcastTimerState() {
-  chrome.tabs.query({}, (tabs) => {
-    tabs.forEach(tab => {
-      chrome.tabs.sendMessage(tab.id, {
-        action: 'timerUpdate',
-        timerState: timerState
-      }).catch(error => {
-        // 忽略内容脚本尚未加载导致的错误
-        console.log(`Tab ${tab.id} 发送消息失败:`, error);
-      });
-    });
+  // 向popup发送消息（如果打开）
+  chrome.runtime.sendMessage({ 
+    action: 'timerUpdate', 
+    timerState: timerState 
+  }).catch(err => {
+    // 忽略popup关闭错误
+    console.log('发送消息到popup失败:', err);
+  });
+  
+  // 向独立计时器窗口发送消息
+  chrome.windows.getAll({populate: true}, function(windows) {
+    for (let browserWindow of windows) {
+      for (let tab of browserWindow.tabs) {
+        if (tab.url && tab.url.includes('timer.html')) {
+          chrome.tabs.sendMessage(tab.id, { 
+            action: 'timerUpdate', 
+            timerState: timerState 
+          }).catch(err => {
+            console.log(`发送消息到计时器窗口 ${tab.id} 失败:`, err);
+          });
+        }
+      }
+    }
   });
 }
 
-// 计时器完成时处理
+// 计时器完成时通知相关页面
 function timerCompleted() {
-  console.log('计时器完成!');
-  stopTimer();
+  timerState.isRunning = false;
+  saveTimerState();
   
-  // 显示通知
+  // 通知popup（如果打开）
+  chrome.runtime.sendMessage({ 
+    action: 'timerCompleted'
+  }).catch(err => {
+    // 忽略popup关闭错误
+    console.log('发送计时完成消息到popup失败:', err);
+  });
+  
+  // 通知独立计时器窗口
+  chrome.windows.getAll({populate: true}, function(windows) {
+    for (let browserWindow of windows) {
+      for (let tab of browserWindow.tabs) {
+        if (tab.url && tab.url.includes('timer.html')) {
+          chrome.tabs.sendMessage(tab.id, { 
+            action: 'timerCompleted'
+          }).catch(err => {
+            console.log(`发送计时完成消息到计时器窗口 ${tab.id} 失败:`, err);
+          });
+          
+          // 将窗口置于顶部
+          chrome.windows.update(browserWindow.id, {focused: true});
+        }
+      }
+    }
+  });
+  
+  // 显示系统通知
   chrome.notifications.create({
     type: 'basic',
     iconUrl: 'images/timer.svg',
-    title: '计时器完成',
-    message: '您的5分钟计时已完成!',
-    priority: 2,
-    silent: true // 不使用系统声音，我们将使用自定义声音
-  });
-  
-  // 广播计时完成消息，让内容脚本播放声音
-  chrome.tabs.query({active: true}, (tabs) => {
-    if (tabs.length > 0) {
-      chrome.tabs.sendMessage(tabs[0].id, {
-        action: 'timerCompleted'
-      }).catch(error => {
-        // 尝试向所有标签页发送消息
-        console.log('发送计时完成消息失败，尝试向所有标签页发送:', error);
-        chrome.tabs.query({}, (allTabs) => {
-          if (allTabs.length > 0) {
-            chrome.tabs.sendMessage(allTabs[0].id, {
-              action: 'timerCompleted'
-            }).catch(err => {
-              console.log('向所有标签页发送消息也失败:', err);
-            });
-          }
-        });
-      });
-    }
+    title: '时间到！',
+    message: '您设置的计时器已完成',
+    priority: 2
   });
 }
 
@@ -189,5 +212,57 @@ function timerCompleted() {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === timerState.alarmName) {
     timerCompleted();
+  }
+});
+
+// 添加打开计时器窗口的功能
+function openTimerWindow() {
+  // 检查是否已经存在计时器窗口
+  chrome.windows.getAll({populate: true}, function(windows) {
+    let timerWindowExists = false;
+    
+    for (let browserWindow of windows) {
+      for (let tab of browserWindow.tabs) {
+        if (tab.url && tab.url.includes('timer.html')) {
+          // 如果找到了计时器窗口，激活它
+          chrome.windows.update(browserWindow.id, {focused: true});
+          chrome.tabs.update(tab.id, {active: true});
+          timerWindowExists = true;
+          break;
+        }
+      }
+      if (timerWindowExists) break;
+    }
+    
+    // 如果没有找到计时器窗口，创建一个新的
+    if (!timerWindowExists) {
+      chrome.windows.create({
+        url: chrome.runtime.getURL('timer.html'),
+        type: 'popup',
+        width: 400,
+        height: 500
+      });
+    }
+  });
+}
+
+// 监听点击扩展图标事件（如果popup未设置）
+chrome.action.onClicked.addListener(function(tab) {
+  openTimerWindow();
+});
+
+// 添加右键菜单项
+chrome.runtime.onInstalled.addListener(function() {
+  chrome.contextMenus.create({
+    id: 'openTimer',
+    title: '打开计时器窗口',
+    contexts: ['all']
+  });
+});
+
+// 监听菜单点击事件
+chrome.contextMenus.onClicked.addListener(function(info, tab) {
+  if (info.menuItemId === 'openTimer') {
+    openTimerWindow();
   }
 }); 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Sense Of Time - 计时器",
-  "description": "一个简洁美观的计时器，帮助您专注工作和休息",
+  "name": "Sense Of Time - Timer",
+  "description": "A clean and beautiful timer to help you focus on work and rest",
   "version": "1.0",
   "icons": {
     "16": "images/timer.svg",
@@ -9,8 +9,8 @@
     "128": "images/timer.svg"
   },
   "action": {
-    "default_title": "Sense Of Time 计时器",
-    "default_popup": "popup.html",
+    "default_title": "Sense Of Time Timer",
+    "default_popup": "options.html",
     "default_icon": {
       "16": "images/timer.svg",
       "24": "images/timer.svg",
@@ -18,24 +18,22 @@
     }
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["timer.css"]
-    }
-  ],
   "permissions": [
     "storage",
     "notifications",
-    "alarms"
+    "alarms",
+    "contextMenus",
+    "tabs",
+    "windows"
+  ],
+  "host_permissions": [
+    "<all_urls>"
   ],
   "web_accessible_resources": [
     {
-      "resources": ["notification.mp3", "images/*"],
+      "resources": ["notification.mp3", "images/*", "timer.html", "timer.js"],
       "matches": ["<all_urls>"]
     }
   ]

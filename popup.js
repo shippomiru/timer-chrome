@@ -1,74 +1,19 @@
 // popup.js - 弹出页面逻辑
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('弹出页面已加载');
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('弹出窗口已加载');
   
+  // 获取DOM元素
   const timeDisplay = document.getElementById('time-display');
   const toggleBtn = document.getElementById('toggle-btn');
+  const openWindowBtn = document.getElementById('open-window-btn');
   const progressFill = document.querySelector('.timer-progress-fill');
   
-  // 获取圆形进度条的总长度
-  const circleCircumference = parseFloat(progressFill.getAttribute('stroke-dasharray'));
-  
+  // 默认定时器状态
   let timerState = {
-    timeLeft: 5 * 60,
-    isRunning: false,
-    totalTime: 5 * 60
+    timeLeft: 5 * 60, // 默认5分钟（秒）
+    totalTime: 5 * 60,
+    isRunning: false
   };
-  
-  // 从后台获取计时器状态
-  chrome.runtime.sendMessage({ action: 'getTimerState' }, (response) => {
-    if (response) {
-      timerState = response;
-      updateUI();
-    }
-  });
-  
-  // 计时器状态变化时更新UI
-  function updateUI() {
-    console.log('更新UI，计时器状态:', timerState);
-    
-    // 更新时间显示
-    timeDisplay.textContent = formatTime(timerState.timeLeft);
-    
-    // 更新圆形进度条
-    const progressPercentage = timerState.timeLeft / timerState.totalTime;
-    const dashOffset = circleCircumference * (1 - progressPercentage);
-    progressFill.style.strokeDashoffset = dashOffset;
-    
-    // 根据进度更新进度条颜色
-    if (timerState.timeLeft <= 10) {
-      // 接近结束时显示红色
-      progressFill.style.stroke = '#EF4444';
-    } else if (timerState.timeLeft <= 60) {
-      // 最后一分钟显示黄色
-      progressFill.style.stroke = '#F59E0B';
-    } else {
-      // 正常状态显示紫色/蓝色
-      progressFill.style.stroke = '#818CF8';  // 使用浅色模式的默认颜色
-    }
-    
-    // 更新按钮状态
-    if (timerState.isRunning) {
-      toggleBtn.style.backgroundColor = '#F3F4F6';
-      toggleBtn.style.color = '#6b7280';
-      toggleBtn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-      `;
-    } else {
-      toggleBtn.style.backgroundColor = '#1f2937';
-      toggleBtn.style.color = 'white';
-      
-      if (timerState.timeLeft === 0) {
-        toggleBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-        `;
-      } else {
-        toggleBtn.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-        `;
-      }
-    }
-  }
   
   // 格式化时间显示
   function formatTime(seconds) {
@@ -77,48 +22,76 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   
-  // 启动/暂停计时器
-  toggleBtn.addEventListener('click', () => {
-    console.log('点击了启动/暂停按钮');
+  // 更新定时器UI
+  function updateTimerUI() {
+    console.log('更新定时器UI');
+    // 更新时间显示
+    timeDisplay.textContent = formatTime(timerState.timeLeft);
     
-    if (timerState.timeLeft === 0) {
-      // 如果计时器已结束，重置并开始
-      chrome.runtime.sendMessage({ action: 'resetTimer' }, (response) => {
-        if (response) {
-          timerState = response;
-          
-          // 然后开始
-          chrome.runtime.sendMessage({ action: 'startTimer' }, (startResponse) => {
-            if (startResponse) {
-              timerState = startResponse;
-              updateUI();
-            }
-          });
-        }
-      });
-    } else {
-      // 否则切换启动/暂停
-      chrome.runtime.sendMessage({ 
-        action: timerState.isRunning ? 'stopTimer' : 'startTimer'
-      }, (response) => {
-        if (response) {
-          timerState = response;
-          updateUI();
-        }
-      });
-    }
-  });
+    // 更新进度圈
+    const progressValue = (timerState.timeLeft / timerState.totalTime);
+    const circumference = 2 * Math.PI * 64; // 圆周长 = 2πr，r=64
+    const dashOffset = circumference * (1 - progressValue);
+    progressFill.style.strokeDasharray = `${circumference}`;
+    progressFill.style.strokeDashoffset = `${dashOffset}`;
+    
+    // 更新按钮图标
+    toggleBtn.innerHTML = timerState.isRunning 
+      ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>'
+      : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+  }
   
-  // 监听来自后台的消息
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('弹出页面收到消息:', message);
+  // 切换定时器状态
+  function toggleTimer() {
+    timerState.isRunning = !timerState.isRunning;
+    console.log('定时器状态已切换:', timerState.isRunning ? '运行中' : '已暂停');
     
-    if (message.action === 'timerUpdate' && message.timerState) {
-      timerState = message.timerState;
-      updateUI();
+    if (timerState.isRunning) {
+      // 启动定时器
+      chrome.runtime.sendMessage({action: 'startTimer', timeLeft: timerState.timeLeft});
+    } else {
+      // 暂停定时器
+      chrome.runtime.sendMessage({action: 'pauseTimer'});
     }
     
-    sendResponse({ received: true });
-    return true;
-  });
+    updateTimerUI();
+  }
+  
+  // 在新窗口中打开定时器
+  function openTimerWindow() {
+    console.log('在新窗口中打开定时器');
+    chrome.runtime.sendMessage({
+      action: 'openTimerWindow',
+      state: timerState
+    });
+  }
+  
+  // 初始化
+  function initialize() {
+    console.log('初始化定时器状态');
+    // 向background请求当前定时器状态
+    chrome.runtime.sendMessage({action: 'getTimerState'}, function(response) {
+      if (response && response.timerState) {
+        timerState = response.timerState;
+        updateTimerUI();
+      }
+    });
+    
+    // 监听来自background的消息
+    chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+      if (request.action === 'timerUpdated') {
+        console.log('收到定时器更新:', request.timerState);
+        timerState = request.timerState;
+        updateTimerUI();
+      }
+    });
+  }
+  
+  // 添加事件监听器
+  toggleBtn.addEventListener('click', toggleTimer);
+  openWindowBtn.addEventListener('click', openTimerWindow);
+  
+  // 初始化定时器
+  initialize();
+  updateTimerUI();
 }); 
