@@ -1,43 +1,44 @@
-# Sense Of Time - Chrome 计时器扩展
+# Sense Of Time - Chrome Timer Extension
 
-一个简洁美观的计时器 Chrome 扩展，帮助您专注工作和休息。
+A clean and beautiful timer Chrome extension that helps you focus on work and rest periods.
 
-## 功能特点
+## Key Features
 
-- 在任何网页上显示悬浮计时器
-- 支持拖拽移动位置
-- 计时完成后发送桌面通知并播放声音提示
-- 在切换标签页或关闭页面后依然继续计时
-- 支持快捷键 Alt+T 快速显示/隐藏计时器
-- 支持明暗两种主题，自动适应系统设置
+- Configurable timer with multiple duration options (5, 10, 15, 20, 25, 30 minutes)
+- Elegant circular progress indicator
+- Desktop notifications and sound alerts when timer completes
+- Timer continues running even when switching tabs or closing browser
+- Stand-alone timer window option for better visibility
+- Clean, minimalist design with simple controls
+- Supports both popup and dedicated window modes
 
-## 如何使用
+## How to Use
 
-1. 在浏览器右上角点击扩展图标打开控制面板
-2. 点击"开始"按钮启动计时器
-3. 可以在任何页面使用 Alt+T 快速切换计时器的显示/隐藏状态
-4. 通过拖拽计时器可以调整其在屏幕上的位置
+1. Click the extension icon in the browser's top right corner to open the configuration panel
+2. Select your desired timer duration
+3. Click "Start Timer" to begin the countdown in a dedicated window
+4. The timer will send a notification and play a sound when time is up
 
-## 安装方式
+## Installation
 
-### 从 Chrome 商店安装（即将上线）
+### Chrome Web Store (Coming Soon)
 
-1. 访问 Chrome 网上应用店
-2. 搜索"Sense Of Time 计时器"
-3. 点击"添加到 Chrome"按钮安装
+1. Visit the Chrome Web Store
+2. Search for "Sense Of Time Timer"
+3. Click "Add to Chrome" button
 
-### 手动安装
+### Manual Installation
 
-1. 下载本项目的 ZIP 文件并解压
-2. 在 Chrome 浏览器中访问 `chrome://extensions/`
-3. 开启右上角的"开发者模式"
-4. 点击"加载已解压的扩展程序"按钮
-5. 选择刚才解压的文件夹
+1. Download the ZIP file of this project and extract it
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right corner
+4. Click "Load unpacked extension"
+5. Select the folder you extracted earlier
 
-## 反馈与建议
+## Feedback and Suggestions
 
-如有任何问题或建议，请提交 Issue 或发送邮件至 [your-email@example.com](mailto:your-email@example.com)。
+If you have any questions or suggestions, please submit an Issue or email [your-email@example.com](mailto:your-email@example.com).
 
-## 许可证
+## License
 
 MIT 
