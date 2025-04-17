@@ -2,11 +2,12 @@
 console.log('计时器插件后台服务启动');
 
 let timerState = {
-  timeLeft: 5 * 60,
+  timeLeft: 1 * 60,
   isRunning: false,
-  totalTime: 5 * 60,
+  totalTime: 1 * 60,
   startTime: null,
-  alarmName: 'timerAlarm'
+  alarmName: 'timerAlarm',
+  activeWindowId: null // 记录活动的popup窗口ID
 };
 
 // 从存储中恢复计时器状态
@@ -15,19 +16,9 @@ chrome.storage.local.get(['timerState'], (result) => {
     console.log('恢复计时器状态:', result.timerState);
     timerState = result.timerState;
     
-    // 如果计时器正在运行，重新计算剩余时间并继续
-    if (timerState.isRunning && timerState.startTime) {
-      const elapsedSeconds = Math.floor((Date.now() - timerState.startTime) / 1000);
-      timerState.timeLeft = Math.max(0, timerState.timeLeft - elapsedSeconds);
-      
-      if (timerState.timeLeft > 0) {
-        startTimer();
-      } else {
-        timerState.isRunning = false;
-        timerState.timeLeft = 0;
-        saveTimerState();
-      }
-    }
+    // 由于需求更改，不再在浏览器关闭后继续计时
+    // 而是重置计时器状态
+    resetTimer();
   }
 });
 
@@ -72,6 +63,7 @@ function resetTimer() {
   timerState.isRunning = false;
   timerState.timeLeft = timerState.totalTime;
   timerState.startTime = null;
+  timerState.activeWindowId = null;
   chrome.alarms.clear(timerState.alarmName);
   saveTimerState();
   
@@ -82,6 +74,12 @@ function resetTimer() {
 // 监听来自popup和独立窗口的消息
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('收到消息:', message);
+  
+  // 记录发送消息的窗口ID
+  if (sender.tab && sender.tab.windowId) {
+    timerState.activeWindowId = sender.tab.windowId;
+    saveTimerState();
+  }
   
   if (message.action === 'getTimerState') {
     sendResponse(timerState);
@@ -117,6 +115,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   
   return true; // 保持通道开放，以便异步响应
+});
+
+// 监听窗口关闭事件
+chrome.windows.onRemoved.addListener((windowId) => {
+  console.log('窗口关闭:', windowId);
+  
+  // 检查关闭的是否是当前活动的计时器窗口
+  if (windowId === timerState.activeWindowId) {
+    console.log('计时器窗口已关闭，停止并重置计时器');
+    resetTimer();
+  } else {
+    // 检查是否所有计时器窗口都已关闭
+    chrome.windows.getAll({populate: true}, (windows) => {
+      let timerWindowExists = false;
+      
+      for (let browserWindow of windows) {
+        for (let tab of browserWindow.tabs) {
+          if (tab.url && (tab.url.includes('timer.html') || tab.url.includes('popup.html'))) {
+            timerWindowExists = true;
+            break;
+          }
+        }
+        if (timerWindowExists) break;
+      }
+      
+      // 如果没有找到计时器窗口，重置计时器
+      if (!timerWindowExists) {
+        console.log('所有计时器窗口已关闭，重置计时器');
+        resetTimer();
+      }
+    });
+  }
 });
 
 // 1秒检查一次计时器状态

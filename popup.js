@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 默认定时器状态
   let timerState = {
-    timeLeft: 5 * 60, // 默认5分钟（秒）
-    totalTime: 5 * 60,
+    timeLeft: 1 * 60, // 默认1分钟（秒）
+    totalTime: 1 * 60,
     isRunning: false
   };
   
@@ -48,10 +48,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (timerState.isRunning) {
       // 启动定时器
-      chrome.runtime.sendMessage({action: 'startTimer', timeLeft: timerState.timeLeft});
+      chrome.runtime.sendMessage({action: 'startTimer'});
     } else {
       // 暂停定时器
-      chrome.runtime.sendMessage({action: 'pauseTimer'});
+      chrome.runtime.sendMessage({action: 'stopTimer'});
     }
     
     updateTimerUI();
@@ -61,8 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function openTimerWindow() {
     console.log('在新窗口中打开定时器');
     chrome.runtime.sendMessage({
-      action: 'openTimerWindow',
-      state: timerState
+      action: 'openTimerWindow'
     });
   }
   
@@ -71,19 +70,32 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('初始化定时器状态');
     // 向background请求当前定时器状态
     chrome.runtime.sendMessage({action: 'getTimerState'}, function(response) {
-      if (response && response.timerState) {
-        timerState = response.timerState;
-        updateTimerUI();
+      if (response) {
+        timerState = response;
+        
+        // 在popup打开时，自动启动计时器（除非已经运行）
+        if (!timerState.isRunning) {
+          console.log('自动启动计时器');
+          chrome.runtime.sendMessage({action: 'startTimer'}, function(startResponse) {
+            if (startResponse) {
+              timerState = startResponse;
+              updateTimerUI();
+            }
+          });
+        } else {
+          updateTimerUI();
+        }
       }
     });
     
     // 监听来自background的消息
     chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-      if (request.action === 'timerUpdated') {
+      if (request.action === 'timerUpdate' && request.timerState) {
         console.log('收到定时器更新:', request.timerState);
         timerState = request.timerState;
         updateTimerUI();
       }
+      return true;
     });
   }
   
@@ -93,5 +105,4 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 初始化定时器
   initialize();
-  updateTimerUI();
 }); 

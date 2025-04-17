@@ -10,9 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const circleCircumference = parseFloat(progressFill.getAttribute('stroke-dasharray'));
   
   let timerState = {
-    timeLeft: 5 * 60,
+    timeLeft: 1 * 60,
     isRunning: false,
-    totalTime: 5 * 60
+    totalTime: 1 * 60
   };
   
   // 从后台获取计时器状态
@@ -20,6 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (response) {
       timerState = response;
       updateUI();
+      
+      // 在timer窗口打开时，自动启动计时器（除非已经运行）
+      if (!timerState.isRunning) {
+        console.log('自动启动计时器');
+        chrome.runtime.sendMessage({action: 'startTimer'}, (startResponse) => {
+          if (startResponse) {
+            timerState = startResponse;
+            updateUI();
+          }
+        });
+      }
     }
   });
   
@@ -35,17 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashOffset = circleCircumference * (1 - progressPercentage);
     progressFill.style.strokeDashoffset = dashOffset;
     
-    // 根据进度更新进度条颜色
-    if (timerState.timeLeft <= 10) {
-      // 接近结束时显示红色
-      progressFill.style.stroke = '#EF4444';
-    } else if (timerState.timeLeft <= 60) {
-      // 最后一分钟显示黄色
-      progressFill.style.stroke = '#F59E0B';
-    } else {
-      // 正常状态显示紫色/蓝色
-      progressFill.style.stroke = '#818CF8';  // 使用浅色模式的默认颜色
-    }
+    // 设置进度条颜色为固定的紫/蓝色
+    progressFill.style.stroke = '#818CF8';  // 使用浅色模式的默认颜色
     
     // 保持按钮样式一致，仅更新图标
     toggleBtn.style.backgroundColor = '#1f2937';
@@ -127,12 +129,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return true;
   });
   
+  // 添加窗口关闭前的事件监听
+  window.addEventListener('beforeunload', () => {
+    console.log('计时器窗口即将关闭');
+    // 不需要特殊处理，因为background.js会通过windows.onRemoved事件处理窗口关闭
+  });
+  
   // 添加一个闪烁的动画效果
   const styleSheet = document.createElement("style");
   styleSheet.textContent = `
     @keyframes flash {
       0% { background-color: white; }
-      50% { background-color: rgba(239, 68, 68, 0.2); }
+      50% { background-color: rgba(129, 140, 248, 0.2); }
       100% { background-color: white; }
     }
   `;
